@@ -12,7 +12,7 @@ I built and run [GhostNode](https://ghostnode.co) alone: a Python and PostgreSQL
 - replacing a shared refresh tick with per-source lanes, so a listing's price in its final 5 minutes went from about 3 days old to under 1 minute;
 - getting vacuum to keep up with the main table again: dead tuples 77% → 0.1% after the fixes and a manual VACUUM, and 3.7% on 17 Oct.
 
-Open source, re-implemented from scratch from ideas in that work, with tests on CI. Each release after 0.1.0 fixes bugs found by reviewing the one before, and each fix has a test that fails on the older release:
+Open source, re-implemented from scratch from ideas in that work, with tests on CI. Bugs are found by AI code review, and each one is reproduced as a failing test before it is fixed. Three review rounds kept finding data loss in quiet-updates' rollback handling, so 0.3.0 is a redesign. It adds an oracle test that runs random programs against plain SQLAlchemy and requires identical results:
 - **[quiet-updates](https://github.com/abbashkyt-creator/quiet-updates)**: a SQLAlchemy extension that skips UPDATEs touching only bookkeeping columns, such as last-checked timestamps.
 - **[honest-retry](https://github.com/abbashkyt-creator/honest-retry)**: retries HTTP requests only when it is safe, and never replays a POST that may already have been received.
 
