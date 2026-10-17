@@ -9,10 +9,10 @@ I built and run [GhostNode](https://ghostnode.co) alone: a Python and PostgreSQL
 - making the console-to-API hop for bids at-most-once: a request is retried only before a connection exists, and a test checks that nothing is replayed after a reset;
 - finding that listing updates were 99% of Postgres WAL; five changes took it from 3.8 GB/h (a few-minute sample) to 1.5 GB/h (19-hour average), with 0 deadlocks in that window. Most of what is left is text-search index pages copied whole after each checkpoint;
 - tracing a freeze 100 s after every start to a regex holding Python's GIL ([runnable repro](https://github.com/abbashkyt-creator/engineering-notes/blob/main/repro/gil_regex_freeze.py));
-- replacing a shared refresh tick with per-source lanes, so a listing's price in its final 5 minutes went from about 3 days old to under 1 minute;
+- replacing a shared refresh tick with per-source lanes, so a listing's price in its final 5 minutes went from about 3 days old to under 1 minute at a check the same evening (I did not record whether that was the median or the oldest);
 - getting vacuum to keep up with the main table again: dead tuples 77% → 0.1% after the fixes and a manual VACUUM, and 3.7% on 17 Oct.
 
-Open source, re-implemented from scratch from ideas in that work, with tests on CI. Bugs are found by AI code review, and each one is reproduced as a failing test before it is fixed. Three review rounds kept finding data loss in quiet-updates' rollback handling, so 0.3.0 is a redesign. It adds an oracle test that runs random programs against plain SQLAlchemy and requires identical results:
+Open source, re-implemented from scratch from ideas in that work, with tests on CI. Bugs are found by AI code review, and each one is reproduced as a failing test before it is fixed. Five review rounds kept finding data loss in one feature of quiet-updates: carrying skipped values into a later write, which is a cache that has to stay coherent across sessions and processes. So 0.4.0 deletes that feature instead of patching it again. An oracle test checks the library against plain SQLAlchemy that applies the same rule by hand:
 - **[quiet-updates](https://github.com/abbashkyt-creator/quiet-updates)**: a SQLAlchemy extension that skips UPDATEs touching only bookkeeping columns, such as last-checked timestamps.
 - **[honest-retry](https://github.com/abbashkyt-creator/honest-retry)**: retries HTTP requests only when it is safe, and never replays a POST that may already have been received.
 
